@@ -1,15 +1,93 @@
 >>>malloy
 source: GEGweather is duckdb.table('./spokane-temp-1.csv') extend {
     rename: day1 is `Date`
+    
     measure: 
     snow_days is count() {where: Snowfall > 0.01}
-    dimension:
-    high_low_diff is MaxTemperature - MinTemperature
+    warmerthan100 is count() {where:MaxTemperature>100}
+    WarmRain is count(){where:Precipitation>.2 and MaxTemperature>70}
+    VeryCold is count(){where:MaxTemperature < 25}
+    VeryHot is count(){where:MinTemperature >70}
+    ConsistentDay is count(){where: (MaxTemperature - MinTemperature)<10}
+    ChangingDay is count(){where:(MaxTemperature-MinTemperature)>30}
+    HotSnow is count() {where: MaxTemperature > 40 and Snowfall > .01}
+    Shouldbesnowing is count() {where: Precipitation > .1 and MaxTemperature < 35}
+    RainyDay is count() {where: Precipitation > .1}
+    singlesTemp is count() {where: MaxTemperature>0 and MaxTemperature <=9}
+    tensTemp is count() {where: MaxTemperature>10 and MaxTemperature <=19}
+    twentiesTemp is count() {where: MaxTemperature>20 and MaxTemperature <=29}
+    thirtiesTemp is count() {where: MaxTemperature>30 and MaxTemperature <=39}
+    fortiesTemp is count() {where: MaxTemperature>40 and MaxTemperature <=49}
+    fiftiesTemp is count() {where: MaxTemperature>50 and MaxTemperature <=59}
+    sixtiesTemp is count() {where: MaxTemperature>60 and MaxTemperature <=69}
+    seventiesTemp is count() {where: MaxTemperature>70 and MaxTemperature <=79}
+    eightiesTemp is count() {where: (MaxTemperature>80) and (MaxTemperature <=89)}
+    nintiesTemp is count() {where: MaxTemperature>90 and MaxTemperature <=99}
+    #Average Max Temp???
+
+
+
+
+    
+    #dimension:
+    #high_low_diff is MaxTemperature - MinTemperature
+    #dimension:
+    #ComfyDay is 
 }
 >>>malloy
-# line_chart
+>>>malloy
+#Total snow days by year with snow days by month
+run: GEGweather -> {
+    group_by: day1.year 
+    aggregate: snow_days
+    # line_chart
+    --limit: 10000000
+nest: by_month is  {
+    group_by: day1.month
+    aggregate: snow_days
+    
+    --limit: 10000000
+    }
+    order_by: snow_days desc
+}
+>>>malloy
+#Top 10 snow years (snow days by year)
+# bar_chart
+run: GEGweather -> {
+    group_by:  day1.year 
+    aggregate: snow_days
+    --# bar_chart
+    limit: 10
+    order_by: snow_days desc
+
+}
+>>>malloy
+#Top 10 Comfy Days per year (80s max temp by year)
+# bar_chart
+run: GEGweather -> {
+    group_by:  day1.year 
+    aggregate: eightiesTemp
+    --# bar_chart
+    limit: 10
+    order_by: eightiesTemp desc
+
+}
+>>>malloy
+
 run: GEGweather -> {
     group_by: day1.year
-    aggregate: snow_days
-    --limit: 10000000
-}
+    aggregate: VeryHot
+  
+    # line_chart
+    nest: by_month is {
+        group_by:day1.month
+        aggregate: VeryHot
+    }
+    order_by: VeryHot desc
+    }
+>>>malloy
+Make 15 measures and 15 graphs for next class
+>>>malloy
+run: group_by: day1
+    #aggregate: MaxTemperature
+    #calculate: moving_avg_MaxTemperature is avg_moving(MaxTemperature, 5)
